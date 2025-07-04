@@ -1,10 +1,16 @@
 from variables import operator_symbols, segment_abbr
 import code_arithmetic as arithmetic
 import memory_commands as memory
+import code_branching as branching
+import code_function_commands as functions
 
-def code_writer(command,fileName):
+current_function = None
+call_index = 0
+
+def code_writer(command):
+  global current_function,call_index
   instructions = ""
-  commandType, arg1, arg2 = command["commandType"], command["arg1"], command["arg2"]
+  commandType, arg1, arg2,file_stem = command["commandType"], command["arg1"], command["arg2"],command["file_stem"]
   #* ARITHMETIC
   if commandType == 'C_ARITHMETIC':
     match arg1:
@@ -26,7 +32,7 @@ def code_writer(command,fileName):
       case 'temp' | 'pointer' | 'static':
         address = 5 + int(arg2) if arg1 == 'temp' else 3 + int(arg2)
         if arg1 == 'static':
-          address=f"{fileName}.{arg2}"
+          address=f"{file_stem}.{arg2}"
         instructions = memory.push_temp_pointer_static(address) 
   #* POP
   elif commandType == 'C_POP':
@@ -36,8 +42,28 @@ def code_writer(command,fileName):
       case 'temp' | 'pointer' | 'static':
         address = 5 + int(arg2) if arg1 == 'temp' else 3 + int(arg2)
         if arg1 == 'static':
-          address=f"{fileName}.{arg2}"
+          address=f"{file_stem}.{arg2}"
         instructions = memory.pop_temp_pointer_static(address) 
-  
-  print( f"// {commandType} {arg1} {arg2 if arg2 else ""}"+ "\n"+instructions)
+  #* LABEL
+  elif commandType == 'C_LABEL':
+    instructions = branching.write_label(current_function,arg1)
+  #* GOTO
+  elif commandType == 'C_GOTO':
+    instructions = branching.write_goto(current_function,arg1)
+  #* IF
+  elif commandType == 'C_IF':
+    instructions = branching.write_if(current_function,arg1)
+  #* FUNCTION
+  elif commandType == 'C_FUNCTION':
+    instructions = functions.write_function(arg1,arg2)
+    current_function = arg1
+    call_index = 0
+  #* RETURN
+  elif commandType == 'C_RETURN':
+    instructions = functions.write_return()
+  #* CALL
+  elif commandType == 'C_CALL':
+    instructions = functions.write_call(current_function,call_index,arg1,arg2)
+    call_index += 1
+    
   return instructions

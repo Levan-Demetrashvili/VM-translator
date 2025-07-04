@@ -4,7 +4,7 @@ def parser(command):
     case 'push' | 'pop' | 'goto' | 'function' | 'call' | 'return' | 'label' :
       commandType = f"C_{type_.upper()}"
     case 'if-goto':
-      commandType = f"C_{type_.upper()}"
+      commandType = f"C_IF"
     case _:
       commandType="C_ARITHMETIC"
       arg1 = type_
